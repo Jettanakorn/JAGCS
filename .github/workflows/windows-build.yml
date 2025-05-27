@@ -2,42 +2,41 @@ name: Windows Build
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ master ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ master ]
 
 jobs:
   build:
-    runs-on: windows-latest  # Windows Server 2022 (Windows 11)
-
+    runs-on: windows-latest
     steps:
-    # Checkout code
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v4
       with:
-        submodules: recursive  # Critical for Qt projects with submodules
+        submodules: recursive
 
-    # Install Qt
-    - name: Install Qt (MSVC 2019)
+    - name: Install Qt
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.5.0'       # Change to your Qt version (e.g., 5.15.2)
+        version: '5.15.2'
         host: windows
         target: desktop
-        arch: win64_msvc2019_64  # MSVC compiler (recommended)
-        # arch: win64_mingw81    # Alternative: MinGW
+        arch: win64_msvc2019_64
+        modules: qtcharts qtmultimedia qtserialport
 
-    # Build with CMake
-    - name: Configure and Build
+    - name: Configure CMake
       run: |
-        cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
-        cmake --build build --config Release --parallel 4
+        cmake -B build `
+          -G "Visual Studio 16 2019" -A x64 `
+          -DCMAKE_PREFIX_PATH="$env:Qt5_DIR/lib/cmake/Qt5"
 
-    # Package executable (optional)
-    - name: Package Artifact
-      uses: actions/upload-artifact@v3
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
       with:
-        name: MyApp-Windows
+        name: Windows-App
         path: |
           build/Release/*.exe
-          build/Release/*.dll  # Qt DLLs if needed
+          build/Release/*.dll
