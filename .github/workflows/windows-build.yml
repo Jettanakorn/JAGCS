@@ -1,0 +1,43 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: windows-latest  # Windows Server 2022 (Windows 11)
+
+    steps:
+    # Checkout code
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive  # Critical for Qt projects with submodules
+
+    # Install Qt
+    - name: Install Qt (MSVC 2019)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'       # Change to your Qt version (e.g., 5.15.2)
+        host: windows
+        target: desktop
+        arch: win64_msvc2019_64  # MSVC compiler (recommended)
+        # arch: win64_mingw81    # Alternative: MinGW
+
+    # Build with CMake
+    - name: Configure and Build
+      run: |
+        cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --config Release --parallel 4
+
+    # Package executable (optional)
+    - name: Package Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: MyApp-Windows
+        path: |
+          build/Release/*.exe
+          build/Release/*.dll  # Qt DLLs if needed
