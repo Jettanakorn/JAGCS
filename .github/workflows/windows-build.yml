@@ -1,42 +1,30 @@
 name: Windows Build
-
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
+on: [push, pull_request]
 jobs:
   build:
     runs-on: windows-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
 
-    - name: Install Qt
+    - name: Install Qt (MinGW)
       uses: jurplel/install-qt-action@v3
       with:
         version: '5.15.2'
         host: windows
         target: desktop
-        arch: win64_msvc2019_64
+        arch: win64_mingw81  # Changed to MinGW
         modules: qtcharts qtmultimedia qtserialport
 
     - name: Configure CMake
       run: |
-        cmake -B build `
-          -G "Visual Studio 16 2019" -A x64 `
-          -DCMAKE_PREFIX_PATH="$env:Qt5_DIR/lib/cmake/Qt5"
+        cmake -B build -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH="$env:Qt5_DIR/lib/cmake/Qt5"
 
     - name: Build
       run: cmake --build build --config Release
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v4
       with:
         name: Windows-App
-        path: |
-          build/Release/*.exe
-          build/Release/*.dll
+        path: build/*.exe
